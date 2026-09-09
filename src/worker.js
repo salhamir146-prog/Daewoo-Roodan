@@ -8,7 +8,7 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
-    // تنظیمات CORS جهت ارتباط امن فرانت‌اند و بک‌اند
+    // تنظیمات CORS
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -16,10 +16,32 @@ export default {
       "Content-Type": "application/json; charset=UTF-8"
     };
 
+    // ===== سرو کردن فایل‌های استاتیک (HTML) =====
+    if (method === "GET") {
+      // اگر مسیر اصلی بود، index.html را نشان بده
+      if (path === "/" || path === "/index.html") {
+        const html = await env.ASSETS.fetch(request);
+        return html;
+      }
+      
+      // اگر مسیر admin بود، admin.html را نشان بده
+      if (path === "/admin.html" || path === "/admin") {
+        const html = await env.ASSETS.fetch(new Request("https://daewoo-roodan.salhamir146.workers.dev/admin.html", request));
+        return html;
+      }
+      
+      // سایر فایل‌های استاتیک
+      if (path.startsWith("/images/") || path.startsWith("/css/") || path.startsWith("/js/")) {
+        return await env.ASSETS.fetch(request);
+      }
+    }
+
+    // ===== پاسخ به درخواست‌های OPTIONS =====
     if (method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // ===== API ها =====
     try {
       // 1. دریافت لیست محصولات
       if (path === "/api/products" && method === "GET") {
@@ -28,11 +50,11 @@ export default {
         return new Response(JSON.stringify(products), { headers: corsHeaders });
       }
 
-      // 2. افزودن محصول جدید (ویژه پنل مدیریت)
+      // 2. افزودن محصول جدید
       if (path === "/api/products" && method === "POST") {
         const authHeader = request.headers.get("Authorization");
         if (authHeader !== `Bearer ${ADMIN_PHONE}`) {
-          return new Response(JSON.stringify({ error: "عدم دسترسی! تنها مدیر مجاز است." }), { status: 403, headers: corsHeaders });
+          return new Response(JSON.stringify({ error: "عدم دسترسی!" }), { status: 403, headers: corsHeaders });
         }
 
         const body = await request.json();
@@ -60,7 +82,7 @@ export default {
         return new Response(JSON.stringify({ success: true, product: newProduct }), { headers: corsHeaders });
       }
 
-      // 3. حذف محصول (ویژه پنل مدیریت)
+      // 3. حذف محصول
       if (path.startsWith("/api/products/") && method === "DELETE") {
         const authHeader = request.headers.get("Authorization");
         if (authHeader !== `Bearer ${ADMIN_PHONE}`) {
@@ -77,7 +99,7 @@ export default {
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
-      // 4. دریافت و بروزرسانی سوالات متداول (FAQ)
+      // 4. دریافت و بروزرسانی سوالات متداول
       if (path === "/api/faqs" && method === "GET") {
         const faqsRaw = await env.DAEWOO_STORE.get("faqs");
         const faqs = faqsRaw ? JSON.parse(faqsRaw) : getInitialFAQs();
@@ -95,7 +117,7 @@ export default {
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
-      // 5. ورود مدیر (بررسی شماره تلفن 09981064505)
+      // 5. ورود مدیر
       if (path === "/api/admin/login" && method === "POST") {
         const { phone } = await request.json();
         if (phone === ADMIN_PHONE) {
@@ -105,7 +127,7 @@ export default {
             user: { name: "مدیر فروشگاه دوو رودان", phone: ADMIN_PHONE, role: "admin" } 
           }), { headers: corsHeaders });
         } else {
-          return new Response(JSON.stringify({ success: false, error: "شماره تلفن وارد شده دسترسی مدیریت ندارد." }), { status: 401, headers: corsHeaders });
+          return new Response(JSON.stringify({ success: false, error: "شماره تلفن وارد شده دسترسی ندارد" }), { status: 401, headers: corsHeaders });
         }
       }
 
@@ -117,12 +139,12 @@ export default {
   }
 };
 
-// داده‌های اولیه پیش‌فرض در صورت خالی بودن دیتابیس KV
+// داده‌های اولیه
 function getInitialProducts() {
   return [
     {
       id: "prod_1",
-      title: " یخچال و فریزر دوو مدل D4S-0029SS",
+      title: "یخچال و فریزر دوو مدل D4S-0029SS",
       price: 45000000,
       description: "یخچال ساید بای ساید دوو با موتور اینورتر دیجیتال، گرید انرژی +A و سیستم سرمایش هوشمند.",
       image: "https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80",
@@ -141,7 +163,7 @@ function getInitialProducts() {
 
 function getInitialFAQs() {
   return [
-    { id: 1, question: "آیا محصولات دوو رودان دارای گارانتی رسمی هستند؟", answer: "بله، تمامی محصولات فروشگاه دوو رودان با ضمانت‌نامه معتبر شرکتی عرضه می‌شوند." },
-    { id: 2, question: "شرایط ارسال به سراسر کشور به چه صورت است؟", answer: "ارسال در شهر رودان به صورت سریع و برای سایر شهرها از طریق باربری اختصاصی انجام می‌گیرد." }
+    { id: 1, question: "آیا محصولات دوو رودان دارای گارانتی رسمی هستند?", answer: "بله، تمامی محصولات فروشگاه دوو رودان با ضمانت‌نامه معتبر شرکتی عرضه می‌شوند." },
+    { id: 2, question: "شرایط ارسال به سراسر کشور به چه صورت است?", answer: "ارسال در شهر رودان به صورت سریع و برای سایر شهرها از طریق باربری اختصاصی انجام می‌گیرد." }
   ];
 }
