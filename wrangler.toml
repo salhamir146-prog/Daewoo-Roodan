@@ -1,0 +1,11 @@
+name = "daewoo-roodan-api"
+main = "src/worker.js"
+compatibility_date = "2026-01-01"
+
+# تعریف دیتابیس KV برای ذخیره اطلاعات
+kv_namespaces = [
+  { binding = "DAEWOO_STORE", id = "YOUR_KV_NAMESPACE_ID" }
+]
+
+[site]
+bucket = "./public"
