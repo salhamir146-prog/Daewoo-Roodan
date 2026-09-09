@@ -4,7 +4,7 @@ compatibility_date = "2026-01-01"
 
 # تعریف دیتابیس KV برای ذخیره اطلاعات
 kv_namespaces = [
-  { binding = "DAEWOO_STORE", id = "YOUR_KV_NAMESPACE_ID" }
+  { binding = "DAEWOO_STORE", id = "f571ad6dc2df4ba7a94b335f1806517d" }
 ]
 
 [site]
